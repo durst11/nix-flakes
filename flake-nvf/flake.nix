@@ -1,21 +1,41 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
     nvf.url = "github:notashelf/nvf";
   };
 
-  outputs = { self, nixpkgs, nvf, ... }: {
+  outputs = {nixpkgs, nvf, ...}: let
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+    configModule = {
+      # Add any custom options (and do feel free to upstream them!)
+      # options = { ... };
 
-    packages."x86_64-linux".default =
-      (nvf.lib.neovimConfiguration {
-        pkgs = nixpkgs.legacyPackages."x86_64-linux";
-        modules = [./nvf-configuration.nix ];
-      }).neovim;
+      config.vim = {
+        theme.enable = true;
+        # and more options as you see fit...
+      };
+    };
 
-    nixosConfigurations.nixos = nixpkgs.lib.nixoSystem {
-      modules = [
-        nvf.nixosModules.default
-      ];
+    customNeovim = nvf.lib.neovimConfiguration {
+      inherit pkgs;
+      modules = [configModule];
+    };
+  in {
+    # This will make the package available as a flake output under 'packages'
+    packages.${system}.my-neovim = customNeovim.neovim;
+
+    # Example nixosConfiguration using the configured Neovim package
+    nixosConfigurations = {
+      jrd-t490 = nixpkgs.lib.nixosSystem {
+        # ...
+        modules = [
+          # This will make wrapped neovim available in your system packages
+          {environment.systemPackages = [customNeovim.neovim];}
+        ];
+        # ...
+      };
     };
   };
 }
