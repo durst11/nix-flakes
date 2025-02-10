@@ -24,8 +24,10 @@
     };
   in {
     # This will make the package available as a flake output under 'packages'
-    packages.${system}.my-neovim = customNeovim.neovim;
-    #packages.${system}.default = customNeovim.neovim;
+    packages.${system} = {
+    my-neovim = customNeovim.neovim;
+    default = customNeovim.neovim;
+    };
 
     # Example nixosConfiguration using the configured Neovim package
     nixosConfigurations = {
